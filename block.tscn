@@ -1,0 +1,33 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://Area2D.gd" type="Script" id=1]
+[ext_resource path="res://images/empty.png" type="Texture" id=2]
+[ext_resource path="res://images/o.png" type="Texture" id=3]
+[ext_resource path="res://images/x.png" type="Texture" id=4]
+
+[sub_resource type="SpriteFrames" id=1]
+animations = [ {
+"frames": [ ExtResource( 2 ), ExtResource( 3 ), ExtResource( 4 ) ],
+"loop": false,
+"name": "default",
+"speed": 5.0
+} ]
+
+[sub_resource type="RectangleShape2D" id=2]
+extents = Vector2( 1104.06, 1082.02 )
+
+[node name="block" type="Area2D"]
+position = Vector2( 125.916, 192.513 )
+scale = Vector2( 0.05, 0.05 )
+script = ExtResource( 1 )
+
+[node name="acao" type="AnimatedSprite" parent="."]
+position = Vector2( 12.9412, -58.2358 )
+frames = SubResource( 1 )
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2( -6.4707, -58.2358 )
+shape = SubResource( 2 )
+
+[connection signal="mouse_entered" from="." to="." method="_on_Area2D_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_Area2D_mouse_exited"]
