@@ -1,5 +1,4 @@
 extends Node2D
-
 # Declare member variables here. Examples:
 # var a = 2
 # var b = "text"
@@ -8,6 +7,7 @@ var players = [1, 2]
 var currentPlayer = players[0]
 var gameover = false
 var cpuRound = false
+var timer = Timer.new()
 
 var grid = [
 0,0,0,
@@ -31,16 +31,16 @@ func _ready():
 		bloco.connect("hit", self, "_on_setTick")
 	narrador.text = "Vez do jogador " + str(currentPlayer)
 
-func _verificaVencedor(grid):
+func _verificaVencedor(compareGrid, playerToCompare):
 	var winConditions = [
-	[grid[0], grid[1], grid[2]],
-	[grid[3], grid[4], grid[5]],
-	[grid[6], grid[7], grid[8]],
-	[grid[0], grid[3], grid[6]],
-	[grid[1], grid[4], grid[7]],
-	[grid[2], grid[5], grid[8]],
-	[grid[0], grid[4], grid[8]],
-	[grid[2], grid[4], grid[6]],
+	[compareGrid[0], compareGrid[1], compareGrid[2]],
+	[compareGrid[3], compareGrid[4], compareGrid[5]],
+	[compareGrid[6], compareGrid[7], compareGrid[8]],
+	[compareGrid[0], compareGrid[3], compareGrid[6]],
+	[compareGrid[1], compareGrid[4], compareGrid[7]],
+	[compareGrid[2], compareGrid[5], compareGrid[8]],
+	[compareGrid[0], compareGrid[4], compareGrid[8]],
+	[compareGrid[2], compareGrid[4], compareGrid[6]],
 	]
 	
 	var gotWinner = null
@@ -53,14 +53,14 @@ func _verificaVencedor(grid):
 			gotWinner = player
 		elif(player == "222"):
 			gotWinner = player
-	return gotWinner
+	return gotWinner == playerToCompare
 
 func checkWinner(player):
-	if(player == "111"):
+	if(player == 1):
 		narrador.text = "Jogador 1 venceu!"
 		gameover = true
-	elif(player == "222"):
-		narrador.text =  "Jogador 2 venceu!"
+	elif(player == 2):
+		narrador.text =  "Computador venceu!"
 		gameover = true	
 
 func resetGame():
@@ -82,99 +82,105 @@ func resetGame():
 func _process(delta):
 	pass
 	
-func _getPossibleMoves():
+func _getPossibleMoves(grid):
 	var possiblePositions = [];
 
 	for gr in range(grid.size()):
 		if(grid[gr] == 0):
-			possiblePositions.push_front(gr)		
+			possiblePositions.push_back(gr)		
 	return possiblePositions
 	
 func cpuPlay():
-	var verificaVencedor = _verificaVencedor(grid);
-	checkWinner(verificaVencedor)
+	var verificaVencedor = _verificaVencedor(grid, '111');
+	if(verificaVencedor):
+		checkWinner(1)
 	
 	var posicao = 0;
 	if(gameover || !cpuRound):
 		return
 
-	var possiblePositions = _getPossibleMoves();
-	var minimaxPlay = minimax(possiblePositions)
-	
+	var board = grid.duplicate()
+	var possiblePositions = _getPossibleMoves(grid);
+	var minimaxPlay = minimax(board, 2)
 	if(possiblePositions.size() == 0):
 		gameover = true
 		narrador.text = "Deu velha!"
 		return
-		
-	grid[minimaxPlay] = currentPlayer;
-	blocos[minimaxPlay].setFrame(currentPlayer)
+
+	grid[minimaxPlay.index] = currentPlayer;
+	blocos[minimaxPlay.index].setFrame(currentPlayer)
 	currentPlayer = players[0]	
 
 	cpuRound = false
 	narrador.text = "Vez do jogador " + str(currentPlayer)
-	verificaVencedor = _verificaVencedor(grid);
-	checkWinner(verificaVencedor)
+	verificaVencedor = _verificaVencedor(grid, '222');
+	if(verificaVencedor):
+		checkWinner(2)
 	
-func minimax(possiblePositions):
-	var jogada = null
-	var jogadas = {}
-	var bestMove = 4
-
-	if(possiblePositions.has(4)):
-		return 4
-
-	for move in possiblePositions:
-		var curPlayer = 2
-		jogadas[move] = {
-			"cpuScore": 0,
-			"playerScore": 0
+func printGrid(grid):
+	var haoy = """%s,%s,%s,
+%s,%s,%s,
+%s,%s,%s"""
+	
+	return haoy % [grid[0],grid[1],grid[2],grid[3],grid[4],grid[5],grid[6],grid[7],grid[8]]		
+	
+func minimax(newGrid, player, depth = 0, firstPlay = true):
+	var jogadasPossiveis = _getPossibleMoves(newGrid);
+	
+	if (_verificaVencedor(newGrid, '111')):
+		return {
+			"score": -10
 		}
-		
-		var containsVencedor = []
-		var board = grid.duplicate()
-		
-		board[move] = 1
-		var verificaVencedor = _verificaVencedor(board);
-			
-		if(verificaVencedor == '111'):
-			return move
+	elif (_verificaVencedor(newGrid, '222')):
+		return {
+			"score": 10
+		}
+	elif (jogadasPossiveis.size() == 0):
+		return {
+			"score": 0
+		}
+
+	depth += 1
+	var jogadasMinimax = [];
+	
+	for jogada in jogadasPossiveis:
+		var move = {}
+		move.index = jogada
+		newGrid[jogada] = player
+
+		if (player == 2):
+			var resultado = minimax(newGrid, 1, depth, false);
+			move.score = resultado.score;
 		else:
-			board[move] = 0
+			var resultado = minimax(newGrid, 2, depth, false);
+			move.score = resultado.score;
+	
+		newGrid[jogada] = 0;
+		jogadasMinimax.push_back(move);
 
-		board[move] = curPlayer
+	var melhorJogada;
+	if player == 2:
+    	var bestScore = -20;
+    	for jogada in jogadasMinimax:
+      		if (jogada.score > bestScore):
+        		bestScore = jogada.score;
+        		melhorJogada = jogada;
+	else:
+		var bestScore = 20;
+		for jogada in jogadasMinimax:
+			if (jogada.score < bestScore):
+				bestScore = jogada.score;
+				melhorJogada = jogada;
 
-		for gridPos in range(board.size()):
-			if(board[gridPos] == 0):
-				board[gridPos] = curPlayer
-				verificaVencedor = _verificaVencedor(board);
-				if(curPlayer == 2):
-					curPlayer = 1
-				elif(curPlayer == 1):
-					curPlayer = 2
-		
-			if(verificaVencedor == '222'):
-				jogadas[move].cpuScore += 10
-				jogadas[move].playerScore += -10
-			elif(verificaVencedor == '111'):
-				jogadas[move].playerScore 	+= 10
-				jogadas[move].cpuScore 		+= -10
-			elif(verificaVencedor == null):
-				jogadas[move].cpuScore 	  += 0
-				jogadas[move].playerScore += 0			
-	
-	var positionToChoose = null
-	var score = 0;
-	
-	for move in possiblePositions:
-		if(jogadas[move].cpuScore > jogadas[move].playerScore && jogadas[move].cpuScore > score):
-			score = jogadas[move].cpuScore
-			positionToChoose = move
-			
-	return positionToChoose
-	
+#	if(firstPlay):
+#		print(jogadasMinimax)
+#
+	return melhorJogada;
+						
 func _on_setTick(posicao):
-	var verificaVencedor = _verificaVencedor(grid);
-	checkWinner(verificaVencedor)
+	var verificaVencedor = _verificaVencedor(grid, '222');
+	if(verificaVencedor):
+		checkWinner(2)
 
 	if(gameover || cpuRound):
 		return;
@@ -188,11 +194,18 @@ func _on_setTick(posicao):
 	
 	currentPlayer = players[1]
 	cpuRound = true	
-	narrador.text = "Vez do jogador " + str(currentPlayer)
-	verificaVencedor = _verificaVencedor(grid);
-	checkWinner(verificaVencedor)
-	cpuPlay()
-	
+	if(cpuRound):
+		narrador.text = "Vez do computador"
+	verificaVencedor = _verificaVencedor(grid, '111');
+	if(verificaVencedor):
+		checkWinner(1)
+		
+	timer.set_one_shot(true)
+	timer.set_wait_time(1)
+	get_parent().add_child(timer)
+	timer.connect("timeout", self, "cpuPlay")
+	timer.start()	
+
 func _on_restart_game():
 	resetGame()
 

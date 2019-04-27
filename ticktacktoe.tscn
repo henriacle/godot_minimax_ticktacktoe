@@ -56,7 +56,6 @@ position = Vector2( 374.745, 437.402 )
 posicao = 8
 
 [node name="grid" type="Area2D" parent="."]
-editor/display_folded = true
 position = Vector2( 245.934, 306.787 )
 scale = Vector2( 0.38, 0.38 )
 

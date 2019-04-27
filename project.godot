@@ -16,7 +16,13 @@ _global_script_class_icons={
 [application]
 
 config/name="Tick Tack Toe"
+run/main_scene="res://ticktacktoe.tscn"
 config/icon="res://icon.png"
+
+[debug]
+
+settings/gdscript/max_call_stack=5000
+settings/max_remote_stdout_chars_per_second=500000
 
 [display]
 
